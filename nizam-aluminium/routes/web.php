@@ -1,20 +1,33 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\CostController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-// 1. Jika buka web pertama kali, langsung arahkan ke Dashboard (nanti otomatis dicegat disuruh Login)
 Route::get('/', function () {
-    return redirect('/dashboard');
+    return redirect('/login');
 });
 
-// 2. Ini rute Dashboard yang diamankan (Hanya yang sudah login yang bisa masuk)
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Rute Dasbor Utama
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// 3. Rute bawaan Breeze untuk ganti password/profile
-Route::middleware('auth')->group(function () {
+    // Rute Menu Admin
+    Route::resource('customers', CustomerController::class);
+    Route::resource('orders', OrderController::class);
+    Route::resource('costs', CostController::class);
+
+    // Rute Menu Owner
+    Route::get('/job-costing', [ReportController::class, 'jobCosting'])->name('reports.jobCosting');
+    Route::get('/receivables', [ReportController::class, 'receivables'])->name('reports.receivables');
+    Route::resource('users', UserController::class);
+
+    // Rute Profil Bawaan
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
