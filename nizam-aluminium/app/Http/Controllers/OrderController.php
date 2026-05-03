@@ -10,10 +10,21 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Ubah get() menjadi paginate(10)
-        $orders = Order::with('customer')->latest()->paginate(10);
+        $query = Order::with('customer');
+
+        // Pencarian Nama Proyek
+        if ($request->filled('search')) {
+            $query->where('project_name', 'like', "%{$request->search}%");
+        }
+
+        // Filter Status (Ongoing / Completed)
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        $orders = $query->latest()->paginate(10)->withQueryString();
         return view('orders.index', compact('orders'));
     }
 
@@ -71,9 +82,7 @@ class OrderController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $order) {
-            $order->update([
-                'status' => $request->status
-            ]);
+            $order->update(['status' => $request->status]);
 
             if ($request->new_payment > 0) {
                 Payment::create([

@@ -7,10 +7,22 @@ use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Ubah get() menjadi paginate(10)
-        $customers = Customer::latest()->paginate(10);
+        // Memulai query pelanggan
+        $query = Customer::query();
+
+        // Jika ada input pencarian dari view
+        if ($request->filled('search')) {
+            $search = $request->search;
+            // Cari berdasarkan nama ATAU alamat
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%");
+        }
+
+        // withQueryString() agar saat pindah halaman paginasi, filter tidak hilang
+        $customers = $query->latest()->paginate(10)->withQueryString();
+        
         return view('customers.index', compact('customers'));
     }
 

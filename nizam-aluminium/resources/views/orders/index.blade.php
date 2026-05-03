@@ -3,62 +3,93 @@
 @section('title', 'Pesanan & Pembayaran DP')
 
 @section('content')
-<div class="mb-6 flex justify-between items-center">
-    <h3 class="text-gray-700 text-lg font-semibold">Daftar Proyek Berjalan</h3>
-    <a href="{{ route('orders.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
-        + Buat Pesanan Baru
-    </a>
+<div class="mb-5">
+    <h2 class="text-2xl font-extrabold text-gray-800">Data Pesanan Proyek</h2>
+    <p class="text-sm text-gray-500 mt-1">Daftar proyek berjalan dan status pembayarannya.</p>
 </div>
 
 @if(session('success'))
-<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-    <span class="block sm:inline">{{ session('success') }}</span>
+<div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm mb-5" role="alert">
+    <span class="block sm:inline font-medium">{{ session('success') }}</span>
 </div>
 @endif
 
-<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    
+    <!-- TOOLBAR -->
+    <div class="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-white">
+        
+        <!-- Kiri: Filter & Search -->
+        <form action="{{ route('orders.index') }}" method="GET" class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+            <div class="relative w-full sm:w-56">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama proyek..." class="pl-9 bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition">
+            </div>
+            
+            <select name="status" class="w-full sm:w-40 bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 transition">
+                <option value="all">Semua Status</option>
+                <option value="ongoing" {{ request('status') == 'ongoing' ? 'selected' : '' }}>Ongoing (Proses)</option>
+                <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed (Selesai)</option>
+            </select>
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap w-full sm:w-auto shadow-sm">Filter</button>
+            
+            @if(request('search') || (request('status') && request('status') != 'all'))
+                <a href="{{ route('orders.index') }}" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap w-full sm:w-auto text-center border border-red-100">Reset</a>
+            @endif
+        </form>
+
+        <!-- Kanan: Tombol Tambah -->
+        <div class="w-full md:w-auto flex-shrink-0">
+            <a href="{{ route('orders.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center w-full md:w-auto">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Buat Pesanan
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabel Data -->
     <table class="w-full text-sm text-left text-gray-500">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+        <thead class="text-[11px] text-gray-400 uppercase bg-gray-50 border-b border-gray-100 tracking-wider">
             <tr>
-                <th scope="col" class="px-6 py-4">Job ID</th>
-                <th scope="col" class="px-6 py-4">Pelanggan</th>
-                <th scope="col" class="px-6 py-4">Nama Proyek</th>
-                <th scope="col" class="px-6 py-4">Total Harga</th>
-                <th scope="col" class="px-6 py-4">Status</th>
-                <th scope="col" class="px-6 py-4 text-center">Aksi</th>
+                <th scope="col" class="px-6 py-4 font-bold">Job ID</th>
+                <th scope="col" class="px-6 py-4 font-bold">Pelanggan</th>
+                <th scope="col" class="px-6 py-4 font-bold">Nama Proyek</th>
+                <th scope="col" class="px-6 py-4 font-bold">Total Harga</th>
+                <th scope="col" class="px-6 py-4 font-bold">Status</th>
+                <th scope="col" class="px-6 py-4 text-center font-bold">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @forelse($orders as $order)
-            <tr class="bg-white border-b hover:bg-gray-50">
-                <td class="px-6 py-4 font-semibold text-gray-900">JOB-{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}</td>
-                <td class="px-6 py-4">{{ $order->customer->name }}</td>
+            <tr class="bg-white border-b border-gray-50 hover:bg-blue-50/30 transition">
+                <td class="px-6 py-4 font-bold text-gray-800">JOB-{{ str_pad($order->id, 4, '0', STR_PAD_LEFT) }}</td>
+                <td class="px-6 py-4 text-gray-800">{{ $order->customer->name }}</td>
                 <td class="px-6 py-4">{{ $order->project_name }}</td>
-                <td class="px-6 py-4 font-medium text-gray-900">Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
+                <td class="px-6 py-4 font-bold text-gray-800">Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
                 <td class="px-6 py-4">
-                    <span class="px-2 py-1 {{ $order->status == 'completed' ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800' }} text-xs rounded-full">{{ ucfirst($order->status) }}</span>
+                    <span class="px-2 py-1 {{ $order->status == 'completed' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700' }} font-bold text-[10px] uppercase tracking-wider rounded-md">{{ $order->status }}</span>
                 </td>
                 <td class="px-6 py-4 text-center flex justify-center space-x-2">
-                    <a href="{{ route('orders.edit', $order->id) }}" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-2 rounded-md text-xs font-medium">Ubah Status / Lunasi</a>
-                    <form action="{{ route('orders.destroy', $order->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus pesanan ini? Pengeluaran dan DP yang terkait juga akan terhapus!');">
+                    <a href="{{ route('orders.edit', $order->id) }}" class="text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 hover:bg-blue-600 font-medium rounded-lg text-xs px-3 py-1.5 transition">Ubah Status</a>
+                    <form action="{{ route('orders.destroy', $order->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus pesanan ini?');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded-md text-xs font-medium">Hapus</button>
+                        <button type="submit" class="text-red-500 hover:text-white border border-red-200 hover:border-red-500 hover:bg-red-500 font-medium rounded-lg text-xs px-3 py-1.5 transition">Hapus</button>
                     </form>
                 </td>
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="px-6 py-8 text-center text-gray-400 border-dashed border-2 m-4">
-                    Belum ada pesanan yang tercatat.
-                </td>
+                <td colspan="6" class="px-6 py-8 text-center text-gray-400">Tidak ada pesanan yang sesuai filter.</td>
             </tr>
             @endforelse
         </tbody>
     </table>
     
-    <!-- Area Pagination -->
-    <div class="p-4 border-t border-gray-100">
+    <div class="p-4 border-t border-gray-50 bg-white">
         {{ $orders->links() }}
     </div>
 </div>

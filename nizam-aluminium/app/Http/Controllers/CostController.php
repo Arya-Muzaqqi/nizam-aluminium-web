@@ -5,14 +5,27 @@ namespace App\Http\Controllers;
 use App\Models\Cost;
 use App\Models\Order;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 class CostController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Ubah get() menjadi paginate(10)
-        $costs = Cost::with('order')->latest()->paginate(10);
+        $query = Cost::with('order');
+
+        // Pencarian berdasarkan nama proyek (menggunakan relasi whereHas)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('order', function($q) use ($search) {
+                $q->where('project_name', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter berdasarkan tanggal spesifik pengeluaran
+        if ($request->filled('date')) {
+            $query->whereDate('cost_date', $request->date);
+        }
+
+        $costs = $query->latest()->paginate(10)->withQueryString();
         return view('costs.index', compact('costs'));
     }
 
@@ -40,6 +53,6 @@ class CostController extends Controller
     public function destroy(Cost $cost)
     {
         $cost->delete();
-        return redirect()->route('costs.index')->with('success', 'Data pengeluaran berhasil dibatalkan/dihapus!');
+        return redirect()->route('costs.index')->with('success', 'Data pengeluaran berhasil dihapus!');
     }
 }
