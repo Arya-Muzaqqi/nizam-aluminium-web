@@ -10,9 +10,9 @@ class CostController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Cost::with('order');
+        $query = Cost::with('order.customer');
 
-        // Pencarian berdasarkan nama proyek (menggunakan relasi whereHas)
+        // Pencarian berdasarkan nama proyek
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('order', function($q) use ($search) {
@@ -54,5 +54,16 @@ class CostController extends Controller
     {
         $cost->delete();
         return redirect()->route('costs.index')->with('success', 'Data pengeluaran berhasil dihapus!');
+    }
+
+    // FUNGSI BARU: Cetak Nota Spesifik berdasarkan ID Proyek
+    public function exportNota($id)
+    {
+        // Tarik data Order (Proyek) berdasarkan ID, beserta relasi Customer dan daftar Pengeluarannya (costs)
+        $order = Order::with(['customer', 'costs'])->findOrFail($id);
+
+        return response()->view('costs.export-nota', compact('order'))
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="Nota_Pengeluaran_JOB-' . str_pad($order->id, 4, '0', STR_PAD_LEFT) . '.xls"');
     }
 }

@@ -31,6 +31,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Tambahkan baris ini untuk rute cetak nota spesifik per ID Proyek
+    Route::get('/costs/nota/{id}', [App\Http\Controllers\CostController::class, 'exportNota'])->name('costs.nota');
 });
 
 require __DIR__.'/auth.php';

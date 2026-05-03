@@ -77,7 +77,13 @@
                 </td>
                 <td class="px-6 py-4">{{ $cost->description }}</td>
                 <td class="px-6 py-4 font-extrabold text-red-500">Rp {{ number_format($cost->amount, 0, ',', '.') }}</td>
-                <td class="px-6 py-4 text-center">
+                <td class="px-6 py-4 text-center flex justify-center space-x-2">
+                    
+                    <!-- TOMBOL CETAK NOTA DIGITAL -->
+                    <a href="{{ route('costs.nota', $cost->order_id) }}" class="text-green-600 hover:text-white border border-green-600 hover:bg-green-600 font-medium rounded-lg text-xs px-3 py-1.5 transition whitespace-nowrap" title="Cetak Nota Excel untuk Proyek Ini">
+                        Cetak Nota
+                    </a>
+
                     <form action="{{ route('costs.destroy', $cost->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data pengeluaran ini?');">
                         @csrf
                         @method('DELETE')
