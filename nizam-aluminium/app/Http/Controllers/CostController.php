@@ -66,4 +66,25 @@ class CostController extends Controller
             ->header('Content-Type', 'application/vnd.ms-excel')
             ->header('Content-Disposition', 'attachment; filename="Nota_Pengeluaran_JOB-' . str_pad($order->id, 4, '0', STR_PAD_LEFT) . '.xls"');
     }
+    public function edit(Cost $cost)
+    {
+        // Ambil semua proyek untuk dropdown, termasuk proyek yang sudah selesai jika data ini milik proyek tersebut
+        $orders = Order::where('status', '!=', 'completed')->orWhere('id', $cost->order_id)->get();
+        return view('costs.edit', compact('cost', 'orders'));
+    }
+
+    public function update(Request $request, Cost $cost)
+    {
+        $request->validate([
+            'order_id' => 'required|exists:orders,id',
+            'category' => 'required|in:material,labor,overhead',
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'cost_date' => 'required|date',
+        ]);
+
+        $cost->update($request->all());
+
+        return redirect()->route('costs.index')->with('success', 'Data pengeluaran berhasil diperbarui!');
+    }
 }

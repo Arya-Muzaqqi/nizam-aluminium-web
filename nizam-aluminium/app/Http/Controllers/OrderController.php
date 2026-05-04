@@ -74,27 +74,35 @@ class OrderController extends Controller
         return view('orders.edit', compact('order', 'total_paid', 'sisa_tagihan'));
     }
 
-    public function update(Request $request, Order $order)
+        public function update(Request $request, Order $order)
     {
         $request->validate([
+            'project_name' => 'required|string|max:200',
+            'total_price' => 'required|numeric|min:0',
             'status' => 'required|in:ongoing,completed',
             'new_payment' => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request, $order) {
-            $order->update(['status' => $request->status]);
+            // Update data inti pesanan (Nama, Harga, Status)
+            $order->update([
+                'project_name' => $request->project_name,
+                'total_price' => $request->total_price,
+                'status' => $request->status,
+            ]);
 
+            // Jika ada input pembayaran baru (Cicilan)
             if ($request->new_payment > 0) {
                 Payment::create([
                     'order_id' => $order->id,
                     'amount' => $request->new_payment,
                     'payment_date' => now(),
-                    'payment_type' => 'Pelunasan / Cicilan',
+                    'payment_type' => 'Cicilan/Pelunasan',
                 ]);
             }
         });
 
-        return redirect()->route('orders.index')->with('success', 'Status proyek dan pembayaran berhasil diperbarui!');
+        return redirect()->route('orders.index')->with('success', 'Data pesanan berhasil diperbarui!');
     }
 
     public function destroy(Order $order)

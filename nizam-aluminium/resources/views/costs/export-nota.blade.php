@@ -51,14 +51,16 @@
         <td style="border: 1px solid #000; text-align: center;">{{ \Carbon\Carbon::parse($cost->cost_date)->format('d/m/Y') }}</td>
         <td style="border: 1px solid #000; text-align: center;">{{ ucfirst($cost->category) }}</td>
         <td style="border: 1px solid #000;">{{ $cost->description }}</td>
-        <td style="border: 1px solid #000; text-align: right;">{{ $cost->amount }}</td>
+        <!-- DI SINI PERUBAHANNYA: Menggunakan number_format untuk merapikan angka -->
+        <td style="border: 1px solid #000; text-align: right;">{{ number_format($cost->amount, 0, ',', '.') }}</td>
     </tr>
     @php $total_nota += $cost->amount; @endphp
     @endforeach
 
     <tr>
         <td colspan="4" style="text-align: right; font-weight: bold; border: 1px solid #000;">TOTAL PENGELUARAN (HPP) PROYEK INI:</td>
-        <td style="font-weight: bold; text-align: right; border: 1px solid #000; background-color: #fff9c4;">{{ $total_nota }}</td>
+        <!-- DI SINI PERUBAHANNYA: Menggunakan number_format untuk Total Akhir -->
+        <td style="font-weight: bold; text-align: right; border: 1px solid #000; background-color: #fff9c4;">{{ number_format($total_nota, 0, ',', '.') }}</td>
     </tr>
     
     <tr><td colspan="5"></td></tr>
