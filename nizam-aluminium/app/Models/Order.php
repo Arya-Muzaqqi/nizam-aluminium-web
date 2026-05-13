@@ -9,9 +9,13 @@ class Order extends Model
     protected $fillable = [
         'customer_id',
         'project_name',
-        'total_price',
+        'spesifikasi_teknis', // TAMBAHAN BARU
+        'total_hpp',          // TAMBAHAN BARU
+        'target_margin_persen', // TAMBAHAN BARU
+        'harga_penawaran',    // TAMBAHAN BARU
+        'total_price',        
         'order_date',
-        'status',
+        'status'
     ];
 
     // Relasi ke tabel Customer (Milik siapa pesanan ini?)
@@ -30,5 +34,10 @@ class Order extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+    
+    public function orderDetails()
+    {
+        return $this->hasMany(OrderDetail::class);
     }
 }

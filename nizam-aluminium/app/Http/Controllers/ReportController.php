@@ -3,19 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\Payment;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class ReportController extends Controller
 {
-    // 1. Fungsi Laporan Laba Rugi / Job Costing
+    // Fungsi Laporan Analisis Laba (Job Costing) khusus untuk Owner
     public function jobCosting(Request $request)
     {
-        // Ambil data beserta relasinya
-        $query = Order::with(['customer', 'costs']);
+        // Hanya ambil data pesanan yang harganya SUDAH DISEPAKATI (Harga Deal > 0)
+        // Kita panggil relasi orderDetails dan masterHpp agar perhitungannya cepat
+        $query = Order::with(['customer', 'orderDetails.masterHpp'])->where('harga_penawaran', '>', 0);
 
-        // 1. Filter Pencarian
+        // 1. Filter Pencarian (Nama Proyek, ID, atau Nama Customer)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -27,12 +27,12 @@ class ReportController extends Controller
             });
         }
 
-        // 2. Filter Status
+        // 2. Filter Status Pengerjaan
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
-        // 3. Filter Bulan (Berdasarkan tanggal pesanan/proyek)
+        // 3. Filter Bulan (Berdasarkan tanggal pesanan)
         if ($request->filled('month')) {
             $year = date('Y', strtotime($request->month));
             $month = date('m', strtotime($request->month));
@@ -40,18 +40,12 @@ class ReportController extends Controller
                   ->whereMonth('order_date', $month);
         }
 
-        // JIKA TOMBOL EXPORT EXCEL DIKLIK (MENGGUNAKAN TRIK NATIVE)
+        // ====================================================================
+        // JIKA TOMBOL EXPORT EXCEL DIKLIK (MENGGUNAKAN TRIK NATIVE BLADE)
+        // ====================================================================
         if ($request->has('export') && $request->export == 'excel') {
-            $orders = $query->latest('order_date')->get(); 
+            $reports = $query->latest('order_date')->get(); 
             
-            foreach ($orders as $order) {
-                $order->material_cost = $order->costs->where('category', 'material')->sum('amount');
-                $order->labor_cost = $order->costs->where('category', 'labor')->sum('amount');
-                $order->overhead_cost = $order->costs->where('category', 'overhead')->sum('amount');
-                $order->total_cost = $order->material_cost + $order->labor_cost + $order->overhead_cost;
-                $order->profit = $order->total_price - $order->total_cost;
-            }
-
             // Info filter untuk Kop Surat Excel
             $filterInfo = [
                 'pencarian' => $request->search ? $request->search : 'Semua Data',
@@ -60,59 +54,21 @@ class ReportController extends Controller
                 'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y')
             ];
 
-            // Trik Ajaib: Memaksa browser mengunduh tampilan Blade menjadi file MS Excel
+            // Memaksa browser mengunduh tampilan Blade menjadi file MS Excel
+            // Catatan: Pastikan isi file 'reports.exports.hpp' disesuaikan dengan variabel baru jika digunakan
             return response()->view('reports.exports.hpp', [
-                'orders' => $orders,
+                'reports' => $reports,
                 'filter' => $filterInfo
             ])
             ->header('Content-Type', 'application/vnd.ms-excel')
-            ->header('Content-Disposition', 'attachment; filename="Laporan_HPP_Nizam_Aluminium.xls"');
+            ->header('Content-Disposition', 'attachment; filename="Laporan_Analisis_Laba_Nizam_Aluminium.xls"');
         }
 
+        // ====================================================================
         // JIKA TAMPILAN WEB BIASA
-        $orders = $query->latest('order_date')->paginate(10)->withQueryString();
+        // ====================================================================
+        $reports = $query->latest('order_date')->paginate(10)->withQueryString();
         
-        foreach ($orders as $order) {
-            $order->material_cost = $order->costs->where('category', 'material')->sum('amount');
-            $order->labor_cost = $order->costs->where('category', 'labor')->sum('amount');
-            $order->overhead_cost = $order->costs->where('category', 'overhead')->sum('amount');
-            $order->total_cost = $order->material_cost + $order->labor_cost + $order->overhead_cost;
-            $order->profit = $order->total_price - $order->total_cost;
-        }
-
-        return view('reports.job-costing', compact('orders'));
-    }
-
-    // 2. Fungsi Laporan Daftar Piutang
-    public function receivables(Request $request)
-    {
-        $query = Order::with(['customer', 'payments']);
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('project_name', 'like', "%{$search}%")
-                  ->orWhere('id', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function($qC) use ($search) {
-                      $qC->where('name', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        $orders = $query->latest('order_date')->get();
-        $receivables = collect();
-
-        foreach ($orders as $order) {
-            $total_paid = $order->payments->sum('amount');
-            $sisa_piutang = $order->total_price - $total_paid;
-
-            if ($sisa_piutang > 0) {
-                $order->total_paid = $total_paid;
-                $order->sisa_piutang = $sisa_piutang;
-                $receivables->push($order);
-            }
-        }
-
-        return view('reports.receivables', compact('receivables'));
+        return view('reports.job-costing', compact('reports'));
     }
 }
