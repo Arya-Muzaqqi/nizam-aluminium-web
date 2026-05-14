@@ -133,6 +133,14 @@ class OrderController extends Controller
 
         return redirect()->route('orders.index')->with('success', 'Harga Deal dan Status proyek berhasil diperbarui!');
     }
+    // MENAMPILKAN DETAIL PESANAN
+    public function show(Order $order)
+    {
+        // Memuat relasi orderDetails dan masterHpp agar bisa menampilkan nama bahannya
+        $order->load(['customer', 'orderDetails.masterHpp']);
+        
+        return view('orders.show', compact('order'));
+    }
 
     // MENGHAPUS PESANAN BERSAMA RINCIAN BAHANNYA
     public function destroy(Order $order)
