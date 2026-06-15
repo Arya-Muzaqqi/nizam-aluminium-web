@@ -51,17 +51,19 @@ class ReportController extends Controller
                 'pencarian' => $request->search ? $request->search : 'Semua Data',
                 'status' => $request->status == 'ongoing' ? 'Proses (Ongoing)' : ($request->status == 'completed' ? 'Selesai (Completed)' : 'Semua Status'),
                 'periode_bulan' => $request->month ? Carbon::parse($request->month)->translatedFormat('F Y') : 'Semua Bulan',
-                'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y')
+                'tanggal_cetak' => Carbon::now()->translatedFormat('d F Y H:i') . ' WIB'
             ];
 
             // Memaksa browser mengunduh tampilan Blade menjadi file MS Excel
-            // Catatan: Pastikan isi file 'reports.exports.hpp' disesuaikan dengan variabel baru jika digunakan
-            return response()->view('reports.exports.hpp', [
-                'reports' => $reports,
+            // View diarahkan ke file baru: reports/exports/laporan.blade.php
+            return response()->view('reports.exports.laporan', [
+                'orders' => $reports, // Menggunakan 'orders' untuk perulangan di Excel
                 'filter' => $filterInfo
             ])
             ->header('Content-Type', 'application/vnd.ms-excel')
-            ->header('Content-Disposition', 'attachment; filename="Laporan_Analisis_Laba_Nizam_Aluminium.xls"');
+            ->header('Content-Disposition', 'attachment; filename="Laporan_Analisis_Laba_Nizam_Aluminium.xls"')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
         }
 
         // ====================================================================
